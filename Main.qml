@@ -3,27 +3,55 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Dialogs
 
+
+
 Window {
+    id: appWindow
     width: 640
     height: 540
     visible: true
     title: qsTr("JViewer")
     color: "white"
 
+    property int mouseX: 0
+    property int mouseY: 0
+
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+
+        onPositionChanged: (mouse) => {
+            appWindow.mouseX = mouse.x
+            appWindow.mouseY = mouse.y
+        }
+    }
+
     FileDialog {
         id: openDialog
         title: "Open File"
         fileMode: FileDialog.OpenFile
 
+
+
+        // Update onAccepted in openDialog:
         onAccepted: {
             var fileUrl = selectedFile
             placeholderText.visible = false
-
             var content = fileReader.readFile(fileUrl)
-
             fileText.text = content
             statusText.text = "Opened: " + fileUrl
+
+            // ← new: detect language and highlight
+            var ext = fileReader.extensionOf(fileUrl)
+            highlighter.setDocument(fileText.textDocument)
+            highlighter.setLanguage(ext)   // "cpp", "h", "java" → matched in C++
         }
+
+        // Update onAccepted in saveDialog:
+        //onAccepted: {
+            //var ok = fileReader.writeFile(selectedFile, fileText.text)
+            //statusText.text = ok ? "Saved: " + selectedFile : "Error saving file"
+        //}
 
     }
 
@@ -79,6 +107,15 @@ Window {
                     placeholderText: "Go to line..."
                     width: 120
 
+                    color: "#333333"              // text color
+                    placeholderTextColor: "#999999"
+
+                    background: Rectangle {
+                        color: "#ffffff"
+                        border.color: "#cccccc"
+                        radius: 4
+                    }
+
                     onAccepted: {
                         var line = parseInt(text)
                         var lines = fileText.text.split("\n")
@@ -92,6 +129,7 @@ Window {
                         }
                     }
                 }
+
 
                 Button {
                     text: "Theme"
@@ -183,6 +221,20 @@ Window {
                         }
                     }
                 }
+            }
+
+
+
+
+
+            Text {
+                id: mousePos
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 10
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: appWindow.mouseX + "," + appWindow.mouseY
+
+
             }
         }
 
@@ -297,8 +349,6 @@ Window {
 
                 }
             }
-
-//
             Text {
                 id: statusText
                 anchors.bottom: parent.bottom
@@ -317,6 +367,8 @@ Window {
                     return "Ln " + line + ", Col " + col
                 }
             }
+
+
 
 
             Text {

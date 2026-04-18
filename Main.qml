@@ -52,6 +52,9 @@ Window {
             color: "#ffffff"
             border.color: "#adb5bd"
             border.width: 1
+
+
+
         }
 
         Rectangle {

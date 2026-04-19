@@ -16,6 +16,8 @@ Window {
     property int mouseX: 0
     property int mouseY: 0
 
+    property string viewMode: "editor" // or settings, preferences etc
+
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
@@ -30,6 +32,7 @@ Window {
         id: openDialog
         title: "Open File"
         fileMode: FileDialog.OpenFile
+
 
         onAccepted: {
             var fileUrl = selectedFile
@@ -166,7 +169,6 @@ Window {
             border.width: 1
 
             Row {
-                //anchors.fill: parent
                 anchors.verticalCenter: parent.verticalCenter
                 x: contentArea.x + (contentArea.width - width) / 2
                 spacing: 6
@@ -310,7 +312,6 @@ Window {
                         else if (name === "Save")  saveDialog.open()
                         else if (name === "Auto-Save: OFF" || name === "Auto-Save: ON") {
                             autoSave = !autoSave
-                            // update label in items list
                             var newItems = ["New", "Open", "Save", "---", autoSave ? "Auto-Save: ON" : "Auto-Save: OFF"]
                             var recents = recentFiles.length > 0 ? ["---"].concat(recentFiles.slice(0, 3)) : []
                             fileDrop.items = newItems.concat(recents)
@@ -348,6 +349,18 @@ Window {
                         }
                     }
                 }
+
+                // ── Stats dropdown ───────────────────────────────────────
+                DropButton {
+                    id: preferencesDrop
+                    label: "Preferences"
+                    items: ["Project Settings", "Environment", "C++ Settings", "Git"]
+                    property bool lineHighlight: true
+                    property bool showLineNums: true
+                    onItemSelected: (name) => {
+                        appWindow.viewMode = "preferences"
+                    }
+                }
             }
         }
 
@@ -380,8 +393,9 @@ Window {
             }
 
             Item {
+                id: sideMenu
                 anchors.top: header.bottom
-                anchors.bottom: parent.bottom
+                anchors.bottom: sideInfoPanel.top
                 width: parent.width
 
                 property var menuItems: ["New File", "Load File", "Save File", "Settings", "Exit"]
@@ -393,7 +407,7 @@ Window {
                     spacing: 10
 
                     Repeater {
-                        model: parent.parent.menuItems
+                        model: sideMenu.menuItems
 
                         Button {
                             text: modelData
@@ -428,14 +442,118 @@ Window {
                 }
             }
 
-            Text {
-                id: mousePos
+            // ── Info panels + mouse pos pinned to sidebar bottom ─────────
+            Column {
+                id: sideInfoPanel
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 10
+                anchors.bottomMargin: 8
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: appWindow.mouseX + "," + appWindow.mouseY
+                spacing: 4
+                width: parent.width - 8
+
+                // ── Word Count panel ─────────────────────────────────────
+                Column {
+                    id: wordCountPanel
+                    width: parent.width
+                    spacing: 2
+                    visible: true
+
+                    Button {
+                        width: parent.width
+                        text: "Words"
+                        font.pixelSize: 10
+                        onClicked: wordCountText.visible = !wordCountText.visible
+                    }
+
+                    Text {
+                        id: wordCountText
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        font.pixelSize: 10
+                        color: "#555555"
+                        visible: true
+                        text: {
+                            var t = fileText.text
+                            var words = t.trim() === "" ? 0 : t.trim().split(/\s+/).length
+                            var chars = t.length
+                            return "W: " + words + "  C: " + chars
+                        }
+                    }
+                }
+
+                // ── File Size panel ──────────────────────────────────────
+                Column {
+                    id: fileSizePanel
+                    width: parent.width
+                    spacing: 2
+                    visible: true
+
+                    Button {
+                        width: parent.width
+                        text: "File Size"
+                        font.pixelSize: 10
+                        onClicked: fileSizeText.visible = !fileSizeText.visible
+                    }
+
+                    Text {
+                        id: fileSizeText
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        font.pixelSize: 10
+                        color: "#555555"
+                        visible: true
+                        text: {
+                            var bytes = new TextEncoder().encode(fileText.text).length
+                            return bytes < 1024
+                                ? bytes + " B"
+                                : (bytes / 1024).toFixed(2) + " KB"
+                        }
+                    }
+                }
+
+                // ── Selection Info panel ─────────────────────────────────
+                Column {
+                    id: selectionPanel
+                    width: parent.width
+                    spacing: 2
+                    visible: true
+
+                    Button {
+                        width: parent.width
+                        text: "Selection"
+                        font.pixelSize: 10
+                        onClicked: selectionText.visible = !selectionText.visible
+                    }
+
+                    Text {
+                        id: selectionText
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        font.pixelSize: 10
+                        color: "#555555"
+                        visible: true
+                        text: {
+                            var sel = fileText.selectedText
+                            if (sel.length === 0) return "No selection"
+                            var selWords = sel.trim() === "" ? 0 : sel.trim().split(/\s+/).length
+                            return "Sel: " + sel.length + " ch, " + selWords + " w"
+                        }
+                    }
+                }
+
+                // ── Mouse pos (unchanged) ────────────────────────────────
+                Text {
+                    id: mousePos
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 10
+                    color: "#888888"
+                    text: appWindow.mouseX + "," + appWindow.mouseY
+                }
             }
         }
+
+
 
         Rectangle {
             id: contentArea
@@ -469,7 +587,8 @@ Window {
                 anchors.right: parent.right
                 anchors.bottom: statusText.top
                 anchors.margins: 8
-                visible: fileText.text !== ""
+                visible: fileText.text !== "" && appWindow.viewMode == "editor"
+
 
                 Row {
                     width: fileScroll.width
@@ -477,6 +596,7 @@ Window {
 
                     TextArea {
                         id: lineNumbers
+                        visible: appWindow.viewMode == "editor"
                         width: 38
                         readOnly: true
 
@@ -594,6 +714,7 @@ Window {
                 anchors.bottom: statusText.top
                 anchors.horizontalCenter: parent.horizontalCenter
                 font.pixelSize: 11
+                visible: appWindow.viewMode == "editor"
                 color: "#888"
                 text: "Lines: " + fileText.text.split("\n").length
             }

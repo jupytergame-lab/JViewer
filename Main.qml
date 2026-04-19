@@ -554,7 +554,7 @@ Window {
         }
 
 
-
+//
         Rectangle {
             id: contentArea
             anchors.left: sideBar.right

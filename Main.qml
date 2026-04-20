@@ -1102,6 +1102,7 @@ Window {
                     return "Ln " + line + ", Col " + col
                 }
             }
+            //
 
             Text {
                 id: lineCount

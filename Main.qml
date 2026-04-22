@@ -4,6 +4,8 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 
+
+
 Window {
     id: appWindow
     width: 1024
@@ -16,7 +18,7 @@ Window {
     property int  mouseY:    0
     property string viewMode: "editor"   // "editor" | "preferences"
 
-    // ── Global editor state (source of truth for Settings page) ────────────
+
     property string editorFontFamily: "Courier New"
     property int    editorFontSize:   12
     property bool   autoIndentEnabled: true
@@ -24,7 +26,7 @@ Window {
     property bool   lineHighlight:     true
     property bool   darkTheme:         false
 
-    // ── Debounce timer for stats recalculation ──────────────────────────────
+
     Timer {
         id: statsDebounce
         interval: 300
@@ -471,6 +473,7 @@ Window {
             }
 
             Column {
+                id: sideButtons
                 anchors.top: sideHeader.bottom
                 anchors.topMargin: 10
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -489,6 +492,65 @@ Window {
                             else if (modelData === "Exit")      Qt.quit()
                         }
                     }
+                }
+            }
+
+            Rectangle {
+                anchors.horizontalCenter: sideButtons.horizontalCenter
+                anchors.top: sideButtons.bottom
+                anchors.topMargin: 10
+
+                width: 140
+                height: 200
+
+                radius: 4
+
+                color: "#eeeeee"
+                border.color: "#adb5bd"
+                border.width: 1
+
+                Component {
+                    id: commandDelegate
+                    Item {
+                        required property string commandName
+                        required property string isCommandExecutable
+
+                        width: ListView.view.width
+                        height: 30
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.margins: 6
+                            spacing: 6
+
+                            Text {
+                                text: commandName
+                                font.pixelSize: 12
+                                color: "#333"
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                width: parent.width - status.width - 6
+                            }
+
+                            Text {
+                                id: status
+                                text: isCommandExecutable
+                                font.pixelSize: 12
+                                color: isCommandExecutable === "✔" ? "green" : "red"
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
+
+                }
+
+                ListView {
+                    anchors.fill: parent
+                    model: CommandsList {}
+                    delegate: commandDelegate
+                    highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
+                    focus: true
+
                 }
             }
 
@@ -579,7 +641,7 @@ Window {
                     width: fileScroll.width
                     spacing: 0
 
-                    // Line numbers — scroll position kept in sync via binding
+                    // Line numbers
                     TextArea {
                         id: lineNumbers
                         visible: appWindow.showLineNumbers
@@ -793,7 +855,7 @@ Window {
                                 }
                             }
 
-                            // PAGE 1: Editor — controls are now wired to live state
+                            // PAGE 1: Editor
                             Column {
                                 spacing: 16
                                 Text { text: "Editor Configuration"; font.pixelSize: 18; font.bold: true; color: "#333333" }
@@ -864,10 +926,6 @@ Window {
                                                 else                     applyTheme(false)
                                             }
                                         }
-                                    }
-                                    CheckBox {
-                                        text: "Use system theme"; checked: false
-                                        onCheckedChanged: { /* hook into Qt.styleHints if desired */ }
                                     }
                                 }
                             }

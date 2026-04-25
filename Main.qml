@@ -1395,7 +1395,7 @@ Window {
                                     Row {
                                         spacing: 12
                                         Text { text: "Default Branch:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: "#333"; width: 120 }
-                                        //TextField { width: 200; text: appWindow.gitBranch; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 }; onTextChanged: appWindow.gitBranch = text }
+                                        TextField { width: 200; text: appWindow.gitBranch; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 }
                                     }
                                     CheckBox { text: "Auto-fetch on open"; checked: false }
                                     CheckBox { text: "Show gutter diff markers"; checked: true }

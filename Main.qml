@@ -759,6 +759,8 @@ Window {
                 ListView {
                     anchors.fill: parent; anchors.topMargin: 20
                     model: CommandsList {}
+                    layoutDirection: Qt.LeftToRight
+                    orientation: Qt.Horizontal
                     delegate: commandDelegate
                     highlight: Rectangle { color: "lightsteelblue"; radius: 3 }
                     focus: true; clip: true

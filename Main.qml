@@ -12,6 +12,8 @@ Window {
     title: qsTr("JViewer")
     color: "white"
 
+    //
+
     // ── Global state ────────────────────────────────────────────────────────
     property int    mouseX:            0
     property int    mouseY:            0
@@ -1573,6 +1575,7 @@ Window {
             terminalOutput("Base64 decode error: " + e.message)
         }
     }
+
 
     // Hex dialog (placeholder)
     Dialog {

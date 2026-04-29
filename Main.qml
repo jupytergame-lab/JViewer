@@ -53,6 +53,10 @@ Window {
     readonly property color thInputBorder:darkTheme ? "#666666"  : "#cccccc"
     readonly property color thStatusBg:   darkTheme ? "#007acc"  : "#f0f0f0"
     readonly property color thStatusText: darkTheme ? "#ffffff"  : "#555555"
+    readonly property color thBtnBg:      darkTheme ? "#3c3c3c"  : "#f0f0f0"
+    readonly property color thBtnHover:   darkTheme ? "#555555"  : "#e0e0e0"
+    readonly property color thBtnPressed: darkTheme ? "#666666"  : "#c8c8c8"
+
     property var    macroSteps:        []
     property int    tabSize:           4
     property bool   showWhitespace:    false
@@ -60,6 +64,26 @@ Window {
     property bool   stickyScroll:      false
     property string gitBranch:         "main"
     property int    terminalHeight:    140
+
+    // ── Themed Button component ──────────────────────────────────────────────
+    component ThemedButton: Button {
+        id: tbRoot
+        contentItem: Text {
+            text: tbRoot.text
+            color: appWindow.thText
+            font.pixelSize: 12
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+        background: Rectangle {
+            color: tbRoot.pressed  ? appWindow.thBtnPressed
+                 : tbRoot.hovered  ? appWindow.thBtnHover
+                 :                   appWindow.thBtnBg
+            border.color: appWindow.thBorder
+            border.width: 1
+            radius: 4
+        }
+    }
 
     // ── Debounced stats ─────────────────────────────────────────────────────
     Timer {
@@ -256,7 +280,7 @@ Window {
         property var    items: []
         signal itemSelected(string name)
 
-        Button {
+        ThemedButton {
             id: btn
             text: dropRoot.label + " ▾"
             onClicked: popup.open()
@@ -318,23 +342,37 @@ Window {
         visible: false; z: 10; height: 38
         anchors.left: sideBar.right; anchors.right: parent.right
         anchors.top: topBar.bottom
-        color: "#f0f4ff"; border.color: "#adb5bd"; border.width: 1
+        color: appWindow.darkTheme ? "#2d2d2d" : "#f0f4ff"
+        border.color: appWindow.thBorder; border.width: 1
 
         Row {
             anchors.verticalCenter: parent.verticalCenter
             anchors.left: parent.left; anchors.leftMargin: 10
             spacing: 6
 
-            TextField { id: findField; placeholderText: "Find…"; width: 160; onTextChanged: findBar.highlightFind(); background: Rectangle { color: "white"; border.color: "#cccccc"; radius: 3 } }
-            TextField { id: replaceField; placeholderText: "Replace…"; width: 160; background: Rectangle { color: "white"; border.color: "#cccccc"; radius: 3 } }
-            CheckBox  { id: caseSensitive; text: "Aa" }
-            CheckBox  { id: regexMode; text: ".*" }
-            Button    { text: "Next";    onClicked: findBar.findNext() }
-            Button    { text: "Prev";    onClicked: findBar.findPrev() }
-            Button    { text: "Replace"; onClicked: findBar.replaceCurrent() }
-            Button    { text: "All";     onClicked: findBar.replaceAll() }
-            Text      { anchors.verticalCenter: parent.verticalCenter; text: findBar.matchCount > 0 ? findBar.matchCount + " matches" : ""; color: "#555"; font.pixelSize: 11 }
-            Button    { text: "✕"; onClicked: { findBar.visible = false; fileText.deselect() } }
+            TextField {
+                id: findField
+                placeholderText: "Find…"; width: 160
+                color: appWindow.thText
+                placeholderTextColor: appWindow.thSubText
+                onTextChanged: findBar.highlightFind()
+                background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 }
+            }
+            TextField {
+                id: replaceField
+                placeholderText: "Replace…"; width: 160
+                color: appWindow.thText
+                placeholderTextColor: appWindow.thSubText
+                background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 }
+            }
+            CheckBox  { id: caseSensitive; text: "Aa"; contentItem: Text { text: caseSensitive.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: caseSensitive.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+            CheckBox  { id: regexMode;     text: ".*"; contentItem: Text { text: regexMode.text;     color: appWindow.thText; font.pixelSize: 12; leftPadding: regexMode.indicator.width + 4;     verticalAlignment: Text.AlignVCenter } }
+            ThemedButton { text: "Next";    onClicked: findBar.findNext() }
+            ThemedButton { text: "Prev";    onClicked: findBar.findPrev() }
+            ThemedButton { text: "Replace"; onClicked: findBar.replaceCurrent() }
+            ThemedButton { text: "All";     onClicked: findBar.replaceAll() }
+            Text      { anchors.verticalCenter: parent.verticalCenter; text: findBar.matchCount > 0 ? findBar.matchCount + " matches" : ""; color: appWindow.thSubText; font.pixelSize: 11 }
+            ThemedButton { text: "✕"; onClicked: { findBar.visible = false; fileText.deselect() } }
         }
 
         property int lastIndex:  -1
@@ -395,7 +433,8 @@ Window {
         anchors.left: sideBar.right; anchors.right: parent.right
         anchors.top: findBar.visible ? findBar.bottom : topBar.bottom
         height: visible ? 28 : 0
-        color: "#f0f0f0"; border.color: "#adb5bd"; border.width: 1; z: 5
+        color: appWindow.darkTheme ? "#2d2d2d" : "#f0f0f0"
+        border.color: appWindow.thBorder; border.width: 1; z: 5
 
         QtObject {
             id: tabBar
@@ -419,13 +458,15 @@ Window {
                 model: tabBar.model
                 delegate: Rectangle {
                     height: parent.height; width: Math.min(160, tabLabel.implicitWidth + 32)
-                    color: tabBar.currentIndex === index ? "#ffffff" : "#e0e0e0"
-                    border.color: "#adb5bd"; border.width: 1
+                    color: tabBar.currentIndex === index
+                           ? (appWindow.darkTheme ? "#3c3c3c" : "#ffffff")
+                           : (appWindow.darkTheme ? "#2a2a2a" : "#e0e0e0")
+                    border.color: appWindow.thBorder; border.width: 1
                     Row {
                         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 4; spacing: 4
-                        Text { id: tabLabel; text: name; font.pixelSize: 11; color: "#333"; anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight }
+                        Text { id: tabLabel; text: name; font.pixelSize: 11; color: appWindow.thText; anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight }
                         Text {
-                            text: "×"; font.pixelSize: 13; color: "#888"; anchors.verticalCenter: parent.verticalCenter
+                            text: "×"; font.pixelSize: 13; color: appWindow.thSubText; anchors.verticalCenter: parent.verticalCenter
                             MouseArea { anchors.fill: parent; onClicked: tabBar.closeTab(index) }
                         }
                     }
@@ -457,8 +498,10 @@ Window {
                 TextField {
                     id: searchField
                     placeholderText: "Search…"
-                    color: "#333333"; placeholderTextColor: "#999999"; width: 120
-                    background: Rectangle { color: "#ffffff"; border.color: "#cccccc"; radius: 4 }
+                    color: appWindow.thText
+                    placeholderTextColor: appWindow.thSubText
+                    width: 120
+                    background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 4 }
                     onTextChanged: {
                         if (text.length > 0) {
                             var idx = fileText.text.indexOf(text)
@@ -472,8 +515,9 @@ Window {
                     id: gotoLine
                     placeholderText: "Go to line…"
                     width: 80; horizontalAlignment: Text.AlignHCenter
-                    color: "#333333"; placeholderTextColor: "#999999"
-                    background: Rectangle { color: "#ffffff"; border.color: "#cccccc"; radius: 4 }
+                    color: appWindow.thText
+                    placeholderTextColor: appWindow.thSubText
+                    background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 4 }
                     onAccepted: {
                         var line  = parseInt(text)
                         var lines = fileText.text.split("\n")
@@ -487,7 +531,7 @@ Window {
                 }
 
                 // Theme toggle
-                Button {
+                ThemedButton {
                     text: appWindow.darkTheme ? "☀ Light" : "🌙 Dark"
                     onClicked: applyTheme(!appWindow.darkTheme)
                 }
@@ -704,11 +748,11 @@ Window {
 
                         Rectangle {
                             visible: modelData === "---"
-                            width: parent.width; height: 1; color: "#e0e0e0"
+                            width: parent.width; height: 1; color: appWindow.thBorder
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Button {
+                        ThemedButton {
                             visible: modelData !== "---"
                             text: modelData; width: parent.width; height: 28
                             font.pixelSize: 11
@@ -801,17 +845,17 @@ Window {
                 // Macro indicator
                 Rectangle {
                     width: parent.width; height: 22; radius: 3
-                    color: appWindow.macroRecording ? "#ffe0e0" : "#f0f0f0"
-                    border.color: appWindow.macroRecording ? "#ff8080" : "#ddd"; border.width: 1
+                    color: appWindow.macroRecording ? "#ffe0e0" : (appWindow.darkTheme ? "#333" : "#f0f0f0")
+                    border.color: appWindow.macroRecording ? "#ff8080" : appWindow.thBorder; border.width: 1
                     Text { anchors.centerIn: parent; font.pixelSize: 10
-                        color: appWindow.macroRecording ? "#cc0000" : "#aaa"
+                        color: appWindow.macroRecording ? "#cc0000" : appWindow.thSubText
                         text: appWindow.macroRecording ? "⏺ REC " + appWindow.macroSteps.length : "No macro" }
                 }
 
                 // Mouse position
                 Text {
                     width: parent.width; horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 10; color: "#aaa"
+                    font.pixelSize: 10; color: appWindow.thSubText
                     text: appWindow.mouseX + "," + appWindow.mouseY
                 }
             }
@@ -850,7 +894,7 @@ Window {
                 id: placeholderText
                 text: "Choose a file to get started or create something new"
                 anchors.centerIn: parent
-                color: "#999999"; font.pixelSize: 14; font.italic: true
+                color: appWindow.thSubText; font.pixelSize: 14; font.italic: true
                 width: parent.width * 0.8; horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap; visible: fileText.text === ""
             }
@@ -898,7 +942,7 @@ Window {
                                 }
                             }
 
-                            Rectangle { id: divider; width: appWindow.showLineNumbers ? 1 : 0; height: fileScroll.height; color: "#cccccc" }
+                            Rectangle { id: divider; width: appWindow.showLineNumbers ? 1 : 0; height: fileScroll.height; color: appWindow.thBorder }
 
                             TextArea {
                                 id: fileText
@@ -922,7 +966,7 @@ Window {
                                     id: cursorHighlight
                                     width: parent.width; height: fileText.cursorRectangle.height
                                     y: fileText.cursorRectangle.y
-                                    color: "#d0e7ff"; z: -1
+                                    color: appWindow.darkTheme ? "#1a3a5c" : "#d0e7ff"; z: -1
                                     visible: appWindow.lineHighlight
                                 }
 
@@ -1078,18 +1122,23 @@ Window {
                     Row {
                         anchors.fill: parent; anchors.leftMargin: 8; spacing: 8
                         Text { text: "TERMINAL"; color: "#aaa"; font.pixelSize: 10; font.bold: true; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: "OUTPUT"; color: "#666"; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: "OUTPUT";   color: "#666"; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
                         Text { text: "PROBLEMS"; color: "#666"; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
                     }
 
                     Row {
                         anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+                        // Terminal buttons — always dark-styled since terminal panel is always dark
                         Button {
                             text: "🗑"; font.pixelSize: 10; height: 18
+                            contentItem: Text { text: parent.text; color: "#cccccc"; font.pixelSize: 10; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                            background: Rectangle { color: parent.hovered ? "#555" : "#3a3a3a"; border.color: "#666"; border.width: 1; radius: 3 }
                             onClicked: terminalText.text = ""
                         }
                         Button {
                             text: "✕"; font.pixelSize: 10; height: 18
+                            contentItem: Text { text: parent.text; color: "#cccccc"; font.pixelSize: 10; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                            background: Rectangle { color: parent.hovered ? "#555" : "#3a3a3a"; border.color: "#666"; border.width: 1; radius: 3 }
                             onClicked: appWindow.showTerminal = false
                         }
                     }
@@ -1191,7 +1240,7 @@ Window {
                                 }
                             }
 
-                            Button {
+                            ThemedButton {
                                 text: "← Back to Editor"
                                 width: parent.width - 16; height: 32
                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -1220,10 +1269,14 @@ Window {
                                 Rectangle { width: parent.width; height: 1; color: appWindow.thBorder }
                                 Column {
                                     spacing: 12; width: parent.width
-                                    CheckBox { text: "Auto-save on focus lost"; checked: fileDrop.autoSave; onCheckedChanged: { fileDrop.autoSave = checked; fileDrop.rebuildItems() } }
-                                    CheckBox { text: "Check for updates on startup"; checked: false }
-                                    CheckBox { text: "Restore last session"; checked: true }
-                                    CheckBox { text: "Show welcome tab on startup"; checked: false }
+                                    CheckBox { text: "Auto-save on focus lost"; checked: fileDrop.autoSave; onCheckedChanged: { fileDrop.autoSave = checked; fileDrop.rebuildItems() }
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Check for updates on startup"; checked: false
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Restore last session"; checked: true
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Show welcome tab on startup"; checked: false
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
                                     Row {
                                         spacing: 12
                                         Text { text: "Language:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
@@ -1264,14 +1317,22 @@ Window {
                                         Text { text: "Tab Size:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
                                         SpinBox { width: 80; from: 1; to: 8; value: appWindow.tabSize; onValueModified: appWindow.tabSize = value }
                                     }
-                                    CheckBox { text: "Show Line Numbers";       checked: appWindow.showLineNumbers;    onCheckedChanged: appWindow.showLineNumbers    = checked }
-                                    CheckBox { text: "Highlight Current Line";  checked: appWindow.lineHighlight;     onCheckedChanged: appWindow.lineHighlight       = checked }
-                                    CheckBox { text: "Auto-indent";             checked: appWindow.autoIndentEnabled; onCheckedChanged: appWindow.autoIndentEnabled   = checked }
-                                    CheckBox { text: "Bracket Matching";        checked: appWindow.bracketMatch;      onCheckedChanged: appWindow.bracketMatch        = checked }
-                                    CheckBox { text: "Show Minimap";            checked: appWindow.showMinimap;       onCheckedChanged: appWindow.showMinimap         = checked }
-                                    CheckBox { text: "Show Whitespace";         checked: appWindow.showWhitespace;    onCheckedChanged: appWindow.showWhitespace      = checked }
-                                    CheckBox { text: "Word Wrap";               checked: appWindow.wordWrap;          onCheckedChanged: { appWindow.wordWrap = checked; fileText.wrapMode = checked ? TextArea.Wrap : TextArea.NoWrap } }
-                                    CheckBox { text: "Sticky Scroll";           checked: appWindow.stickyScroll;      onCheckedChanged: appWindow.stickyScroll        = checked }
+                                    CheckBox { text: "Show Line Numbers";       checked: appWindow.showLineNumbers;    onCheckedChanged: appWindow.showLineNumbers    = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Highlight Current Line";  checked: appWindow.lineHighlight;     onCheckedChanged: appWindow.lineHighlight       = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Auto-indent";             checked: appWindow.autoIndentEnabled; onCheckedChanged: appWindow.autoIndentEnabled   = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Bracket Matching";        checked: appWindow.bracketMatch;      onCheckedChanged: appWindow.bracketMatch        = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Show Minimap";            checked: appWindow.showMinimap;       onCheckedChanged: appWindow.showMinimap         = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Show Whitespace";         checked: appWindow.showWhitespace;    onCheckedChanged: appWindow.showWhitespace      = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Word Wrap";               checked: appWindow.wordWrap;          onCheckedChanged: { appWindow.wordWrap = checked; fileText.wrapMode = checked ? TextArea.Wrap : TextArea.NoWrap }
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Sticky Scroll";           checked: appWindow.stickyScroll;      onCheckedChanged: appWindow.stickyScroll        = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
                                 }
                             }
 
@@ -1287,9 +1348,12 @@ Window {
                                         Text { text: "Theme:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
                                         ComboBox { width: 200; model: ["Light Classic", "Dark Modern", "High Contrast"]; currentIndex: appWindow.darkTheme ? 1 : 0; onActivated: { if (currentIndex === 1) applyTheme(true); else applyTheme(false) } }
                                     }
-                                    CheckBox { text: "Show Breadcrumb"; checked: appWindow.showBreadcrumb; onCheckedChanged: appWindow.showBreadcrumb = checked }
-                                    CheckBox { text: "Show Tab Bar";    checked: true }
-                                    CheckBox { text: "Compact Mode";    checked: false }
+                                    CheckBox { text: "Show Breadcrumb"; checked: appWindow.showBreadcrumb; onCheckedChanged: appWindow.showBreadcrumb = checked
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Show Tab Bar";    checked: true
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Compact Mode";    checked: false
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
                                 }
                             }
 
@@ -1349,8 +1413,8 @@ Window {
                             // PAGE 4: Extensions
                             Column {
                                 spacing: 16
-                                Text { text: "Extensions"; font.pixelSize: 18; font.bold: true; color: "#333333" }
-                                Rectangle { width: parent.width; height: 1; color: "#adb5bd" }
+                                Text { text: "Extensions"; font.pixelSize: 18; font.bold: true; color: appWindow.thText }
+                                Rectangle { width: parent.width; height: 1; color: appWindow.thBorder }
                                 Column {
                                     spacing: 8; width: parent.width
                                     Repeater {
@@ -1364,13 +1428,14 @@ Window {
                                         ]
                                         delegate: Rectangle {
                                             width: parent.width; height: 44; radius: 4
-                                            color: "#f9f9f9"; border.color: "#ddd"; border.width: 1
+                                            color: appWindow.darkTheme ? "#333" : "#f9f9f9"
+                                            border.color: appWindow.thBorder; border.width: 1
                                             Row {
                                                 anchors.fill: parent; anchors.margins: 10; spacing: 10
                                                 Column {
                                                     anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 70
-                                                    Text { text: modelData.name; font.pixelSize: 12; font.bold: true; color: "#333" }
-                                                    Text { text: modelData.desc; font.pixelSize: 10; color: "#888" }
+                                                    Text { text: modelData.name; font.pixelSize: 12; font.bold: true; color: appWindow.thText }
+                                                    Text { text: modelData.desc; font.pixelSize: 10; color: appWindow.thSubText }
                                                 }
                                                 Switch { checked: modelData.enabled; anchors.verticalCenter: parent.verticalCenter }
                                             }
@@ -1382,56 +1447,60 @@ Window {
                             // PAGE 5: Git
                             Column {
                                 spacing: 16
-                                Text { text: "Git Configuration"; font.pixelSize: 18; font.bold: true; color: "#333333" }
-                                Rectangle { width: parent.width; height: 1; color: "#adb5bd" }
+                                Text { text: "Git Configuration"; font.pixelSize: 18; font.bold: true; color: appWindow.thText }
+                                Rectangle { width: parent.width; height: 1; color: appWindow.thBorder }
                                 Column {
                                     spacing: 12; width: parent.width
                                     Row {
                                         spacing: 12
-                                        Text { text: "User Name:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: "#333"; width: 120 }
-                                        TextField { width: 200; placeholderText: "git config user.name"; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 } }
+                                        Text { text: "User Name:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
+                                        TextField { width: 200; placeholderText: "git config user.name"; color: appWindow.thText; placeholderTextColor: appWindow.thSubText; background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 } }
                                     }
                                     Row {
                                         spacing: 12
-                                        Text { text: "User Email:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: "#333"; width: 120 }
-                                        TextField { width: 200; placeholderText: "git config user.email"; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 } }
+                                        Text { text: "User Email:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
+                                        TextField { width: 200; placeholderText: "git config user.email"; color: appWindow.thText; placeholderTextColor: appWindow.thSubText; background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 } }
                                     }
                                     Row {
                                         spacing: 12
-                                        Text { text: "Default Branch:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: "#333"; width: 120 }
-                                        //TextField { width: 200; text: appWindow.gitBranch; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 }
+                                        Text { text: "Default Branch:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
+                                        //TextField { width: 200; text: appWindow.gitBranch; background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 }
                                     }
-                                    CheckBox { text: "Auto-fetch on open"; checked: false }
-                                    CheckBox { text: "Show gutter diff markers"; checked: true }
-                                    //
+                                    CheckBox { text: "Auto-fetch on open"; checked: false
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Show gutter diff markers"; checked: true
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
                                 }
                             }
 
                             // PAGE 6: Build & Run
                             Column {
                                 spacing: 16
-                                Text { text: "Build & Run"; font.pixelSize: 18; font.bold: true; color: "#333333" }
-                                Rectangle { width: parent.width; height: 1; color: "#adb5bd" }
+                                Text { text: "Build & Run"; font.pixelSize: 18; font.bold: true; color: appWindow.thText }
+                                Rectangle { width: parent.width; height: 1; color: appWindow.thBorder }
                                 Column {
                                     spacing: 12; width: parent.width
                                     Row {
                                         spacing: 12
-                                        Text { text: "Build Command:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: "#333"; width: 120 }
-                                        TextField { width: 260; placeholderText: "cmake --build . --config Release"; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 } }
+                                        Text { text: "Build Command:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
+                                        TextField { width: 260; placeholderText: "cmake --build . --config Release"; color: appWindow.thText; placeholderTextColor: appWindow.thSubText; background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 } }
                                     }
                                     Row {
                                         spacing: 12
-                                        Text { text: "Run Command:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: "#333"; width: 120 }
-                                        TextField { width: 260; placeholderText: "./build/MyApp"; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 } }
+                                        Text { text: "Run Command:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
+                                        TextField { width: 260; placeholderText: "./build/MyApp"; color: appWindow.thText; placeholderTextColor: appWindow.thSubText; background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 } }
                                     }
                                     Row {
                                         spacing: 12
-                                        Text { text: "Working Dir:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: "#333"; width: 120 }
-                                        TextField { width: 260; placeholderText: "${workspaceRoot}"; background: Rectangle { color: "white"; border.color: "#ccc"; radius: 3 } }
+                                        Text { text: "Working Dir:"; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 12; color: appWindow.thText; width: 120 }
+                                        TextField { width: 260; placeholderText: "${workspaceRoot}"; color: appWindow.thText; placeholderTextColor: appWindow.thSubText; background: Rectangle { color: appWindow.thInputBg; border.color: appWindow.thInputBorder; radius: 3 } }
                                     }
-                                    CheckBox { text: "Clear terminal before build"; checked: true }
-                                    CheckBox { text: "Auto-run after successful build"; checked: false }
-                                    CheckBox { text: "Show errors in gutter"; checked: true }
+                                    CheckBox { text: "Clear terminal before build"; checked: true
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Auto-run after successful build"; checked: false
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                                    CheckBox { text: "Show errors in gutter"; checked: true
+                                        contentItem: Text { text: parent.text; color: appWindow.thText; font.pixelSize: 12; leftPadding: parent.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
                                 }
                             }
                         }
@@ -1576,7 +1645,6 @@ Window {
         }
     }
 
-
     // Hex dialog (placeholder)
     Dialog {
         id: hexDialog
@@ -1588,6 +1656,8 @@ Window {
             anchors.fill: parent
             TextArea {
                 font.family: "Courier New"; font.pixelSize: 11; readOnly: true
+                color: appWindow.thText
+                background: Rectangle { color: appWindow.thInputBg }
                 text: {
                     var t   = fileText.text.substring(0, 512)
                     var out = ""

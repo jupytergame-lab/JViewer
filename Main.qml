@@ -1551,6 +1551,7 @@ Window {
             }
         }
     }
+    //
 
     // ── Extra editor functions ────────────────────────────────────────────────
     function deleteLine() {
